@@ -6,23 +6,22 @@ import Image from "next/image";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {Form} from "@/components/ui/form";
+import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import React from "react";
-import FormField from "./FormField"
+import FormField from "./FormField";
 import { useRouter } from "next/navigation";
 
 const authFormSchema = (type: FormType) => {
- 
   return z.object({
     name: type === "sign-up" ? z.string().min(3) : z.string().optional(),
     email: z.string().email(),
     password: z.string().min(3),
-  })
-}
+  });
+};
 const AuthForm = ({ type }: { type: FormType }) => {
-   const router = useRouter();
-   const formSchema = authFormSchema(type);
+  const router = useRouter();
+  const formSchema = authFormSchema(type);
 
   // 1. Define your form.
   const form = useForm<z.infer<typeof formSchema>>({
@@ -40,20 +39,17 @@ const AuthForm = ({ type }: { type: FormType }) => {
     // ✅ This will be type-safe and validated.
     try {
       if (type === "sign-up") {
-        toast.success('Account created successfully. Please sign in.')
-        router.push('/sign-in')
-        console.log('SIGN UP', values);
-        
-      } else{
-        toast.success('Signed in successfully')
-        router.push('/')
-        console.log('SIGN IN', values);
-        
+        toast.success("Account created successfully. Please sign in.");
+        router.push("/sign-in");
+        console.log("SIGN UP", values);
+      } else {
+        toast.success("Signed in successfully");
+        router.push("/");
+        console.log("SIGN IN", values);
       }
-    }catch (error) {
-        console.log(error);
-        toast.error(`There was an error ${error}`)
-        
+    } catch (error) {
+      console.log(error);
+      toast.error(`There was an error ${error}`);
     }
   }
 
