@@ -1,3 +1,4 @@
+
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -11,6 +12,12 @@ import { Input } from "@/components/ui/input";
 import React from "react";
 import FormField from "./FormField";
 import { useRouter } from "next/navigation";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/firebase/client";
+import { signUp } from "@/lib/actions/auth.action";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { signIn } from "@/lib/actions/auth.action";
+
 
 const authFormSchema = (type: FormType) => {
   return z.object({
@@ -34,15 +41,45 @@ const AuthForm = ({ type }: { type: FormType }) => {
   });
 
   // 2. Define a submit handler.
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     // Do something with the form values.
     // ✅ This will be type-safe and validated.
     try {
       if (type === "sign-up") {
+        const {name, email , password} = values;
+
+        const userCredentials = await createUserWithEmailAndPassword(auth, email, password);
+        const result = await signUp({
+          uid: userCredentials.user.uid,
+          name: name!,
+          email,
+          password,
+        })
+
+        if(!result?.success){
+          toast.error(result?.message);
+          return
+        }
+
         toast.success("Account created successfully. Please sign in.");
         router.push("/sign-in");
         console.log("SIGN UP", values);
       } else {
+        // Sign in logic here
+
+        const {email, password} = values;
+        const userCredentials = await signInWithEmailAndPassword(auth, email, password);
+
+        const idToken = await userCredentials.user.getIdToken();
+
+        if(!idToken){
+          toast.error("Failed to retrieve ID token. Please try again.");
+          return;
+        }
+
+        await signIn({email, idToken});
+
+
         toast.success("Signed in successfully");
         router.push("/");
         console.log("SIGN IN", values);
