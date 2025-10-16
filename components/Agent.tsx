@@ -29,7 +29,13 @@ interface AgentProps {
   questions?: string[];
 }
 
-const Agent = ({ userName, userId, type, interviewId, questions }: AgentProps) => {
+const Agent = ({
+  userName,
+  userId,
+  type,
+  interviewId,
+  questions,
+}: AgentProps) => {
   const router = useRouter();
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [callStatus, setCallStatus] = useState<CallStatus>(CallStatus.INACTIVE);
@@ -68,39 +74,45 @@ const Agent = ({ userName, userId, type, interviewId, questions }: AgentProps) =
   }, []);
 
   const handleGenerateFeedback = async (messages: SavedMessage[]) => {
-    console.log('Generate feedback here');
+    console.log("Generating feedback...");
 
-    //TODO: CREATE A SERVER ACTION THAT GENERATES FEEDBACK
-    const {success, feedbackId: id} = await createFeedback({
-      interviewId: interviewId!,
-      userId: userId!,
-      transcript: messages
-    })
+    try {
+      const { success, feedbackId: id } = await createFeedback({
+        interviewId: interviewId!,
+        userId: userId!,
+        transcript: messages,
+      });
 
-    if(success && id){
-      router.push(`/interview/${interviewId}/feedback`)
-    }else{
-      console.log('Error saving feedback');
-      router.push('/')
+      if (success && id) {
+        console.log("Feedback generated successfully:", id);
+        router.push(`/interview/${interviewId}/feedback`);
+      } else {
+        console.error("Error: Feedback creation returned success=false");
+        router.push("/");
+      }
+    } catch (error) {
+      console.error("Error generating feedback:", error);
+      router.push("/");
     }
-    
-  }
+  };
 
+  // ✅ FIXED: Removed duplicate redirect and made logic clearer
   useEffect(() => {
-    if(callStatus === CallStatus.FINISHED){
-      if(type === 'generate'){
-        router.push('/')
-      }else{
+    if (callStatus === CallStatus.FINISHED) {
+      if (type === "generate") {
+        // For workflow generation, just go back home
+        router.push("/");
+      } else {
+        // For interviews, generate feedback and redirect will happen in handleGenerateFeedback
         handleGenerateFeedback(messages);
       }
     }
-    if (callStatus === CallStatus.FINISHED) router.push("/");
-  }, [messages, callStatus, type, userId]);
+  }, [callStatus, type]); // ✅ Removed 'messages' and 'userId' from deps to prevent unnecessary re-runs
 
   const handleCall = async () => {
     setCallStatus(CallStatus.CONNECTING);
 
-    if(type === 'generate'){
+    if (type === "generate") {
       await vapi.start(
         undefined, // No assistant
         undefined, // No assistant overrides
@@ -111,30 +123,30 @@ const Agent = ({ userName, userId, type, interviewId, questions }: AgentProps) =
             username: userName,
             userid: userId,
           },
-        })
-    }else{
-      let formattedQuestions = '';
+        }
+      );
+    } else {
+      let formattedQuestions = "";
 
-      if(questions){
+      if (questions) {
         formattedQuestions = questions
-            .map((question) => `- ${question}` ) 
-            .join('\n');       
+          .map((question) => `- ${question}`)
+          .join("\n");
       }
 
       await vapi.start(interviewer, {
         variableValues: {
           questions: formattedQuestions,
-        }
-      })
+        },
+      });
     }
 
     console.log(
       "WORKFLOW ID BEING USED:",
       process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID
     );
-
-    
   };
+
   const handleDisconnect = () => {
     setCallStatus(CallStatus.FINISHED);
     vapi.stop();
