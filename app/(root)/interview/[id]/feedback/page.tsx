@@ -8,6 +8,7 @@ import dayjs from 'dayjs';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
+
 const Page = async ({ params }: RouteParams) => {
   const { id } = await params;
   const user = await getCurrentUser();
@@ -21,6 +22,7 @@ const Page = async ({ params }: RouteParams) => {
   });
 
   console.log(feedback);
+
 
   return (
     <section className="section-feedback">
