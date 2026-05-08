@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+skillsync-a8583-firebase-adminsdk-fbsvc-8194bbeca9.json
 
 # vercel
 .vercel
